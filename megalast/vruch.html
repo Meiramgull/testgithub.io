@@ -1,0 +1,44 @@
+<!-- create.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Создание теста</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container" style="position: relative;">
+    <div class="header">
+      <img src="assets/logo.png" alt="Логотип ЗКАТУ" class="logo">
+      <h1>Создание теста</h1>
+    </div>
+
+    <label>Название теста:</label><br>
+    <div id="testNameContainer">
+      <input type="text" id="testTitle" class="input" placeholder="Введите название теста">
+    </div>
+
+    <div id="questionCreator">
+      <label>Вопрос:</label>
+      <textarea id="questionInput" rows="2" class="input" placeholder="Введите вопрос"></textarea>
+
+      <div id="answersContainer"></div>
+      <button onclick="addAnswer()"style="background-color:#00BFFF;">➕</button>
+
+      <div class="buttons">
+        <button onclick="addQuestion()">➕ Добавить вопрос</button>
+        <button onclick="saveTest()">💾 Сохранить тест</button>
+      </div>
+    </div>
+
+    <div id="questionList"></div>
+    <button onclick="location.href='index.html'" style="position: absolute; top: 20px; left: 20px; background-color: #FFD200; color: #003366; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+      &larr;
+    </button>
+  </div>
+  <script src="script.js">
+    
+  </script>
+
+</body>
+</html>

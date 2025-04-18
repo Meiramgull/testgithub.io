@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Создание теста</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+  <style>
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="position: relative;">
+    <div class="header">
+      <img src="assets/logo.png" alt="Логотип ЗКАТУ" class="logo">
+      <h1>Создание теста</h1>
+    </div>
+
+    <div class="file-upload">
+      <label for="fileInput" style="margin-top: 10px;">Загрузить файл с тестом:</label>
+      <input type="file" id="fileInput" accept=".txt, .docx" onchange="loadTest()">
+    </div>
+    
+    <div class="buttons">
+      <button onclick="saveTest()">💾 Сохранить тест</button>
+  </div>
+    <input type="text" id="testTitle" class="hidden" placeholder="Введите название теста">
+    <div id="testPreview" class="question-container"></div>
+
+    <button onclick="location.href='index.html'" style="position: absolute; top: 20px; left: 20px; background-color: #FFD200; color: #003366; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+      &larr;
+    </button>
+  </div>
+  <script>
+    let loadedQuestions = [];
+
+    function loadTest() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Пожалуйста, выберите файл.');
+        return;
+      }
+
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+
+      if (fileExtension === 'txt') {
+        readTextFile(file);
+      } else if (fileExtension === 'docx') {
+        readDocxFile(file);
+      } else {
+        alert('Поддерживаются только файлы форматов .txt и .docx.');
+      }
+    }
+
+    function readTextFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const content = event.target.result;
+        parseTest(content);
+      };
+      reader.onerror = function() {
+      };
+      reader.readAsText(file);
+    }
+
+    function readDocxFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const arrayBuffer = event.target.result;
+        mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+          .then(function(result) {
+            parseTest(result.value);
+          })
+          .catch(function(err) {
+            });
+      };
+      reader.onerror = function() {
+        alert('Ошибка при чтении файла.');
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function parseTest(content) {
+      const lines = content.split('\n').map(line => line.trim()).filter(Boolean);
+      loadedQuestions = [];
+      let currentQuestion = null;
+
+      lines.forEach(line => {
+        if (line.startsWith('<question')) {
+          if (currentQuestion) {
+            loadedQuestions.push(currentQuestion);
+          }
+          currentQuestion = {
+            question: line.replace(/<question\d+>/, '').trim(),
+            answers: [],
+            correct: null
+          };
+        } else if (line.startsWith('<variant>')) {
+          currentQuestion?.answers.push(line.replace('<variant>', '').trim());
+        } else if (line.startsWith('<variantright>')) {
+          const correctAnswer = line.replace('<variantright>', '').trim();
+          currentQuestion?.answers.push(correctAnswer);
+          currentQuestion.correct = currentQuestion.answers.length - 1;
+        }
+      });
+
+      if (currentQuestion) {
+        loadedQuestions.push(currentQuestion);
+      }
+
+      displayTest(loadedQuestions);
+    }
+
+    function displayTest(questions) {
+      const testPreview = document.getElementById('testPreview');
+      testPreview.innerHTML = '';
+
+      questions.forEach((question, index) => {
+        const questionDiv = document.createElement('div');
+        questionDiv.classList.add('question');
+
+        const questionText = document.createElement('p');
+        questionText.textContent = `${index + 1}. ${question.question}`;
+        questionDiv.appendChild(questionText);
+
+        const variantsList = document.createElement('form');
+        question.answers.forEach((variant, i) => {
+          const isCorrect = i === question.correct; // Check if this is the correct answer
+          const variantItem = document.createElement('div');
+          variantItem.innerHTML = `
+            <label style="${isCorrect ? 'font-weight: bold; color: green;' : ''}">
+              <input type="radio" name="question${index}" value="${i}" ${i === 0 ? 'checked' : ''}>
+              ${variant} ${isCorrect ? '(правильный)' : ''}
+            </label>
+          `;
+          variantsList.appendChild(variantItem);
+        });
+        questionDiv.appendChild(variantsList);
+
+        testPreview.appendChild(questionDiv);
+      });
+
+      document.getElementById('testTitle').classList.remove('hidden');
+      document.getElementById('saveTestButton').classList.remove('hidden');
+    }
+
+    function saveTest() {
+      const testTitle = document.getElementById('testTitle').value.trim();
+
+      if (!testTitle) {
+        alert("Введите название теста!");
+        return;
+      }
+
+      if (loadedQuestions.length === 0) {
+        alert("Добавьте хотя бы один вопрос!");
+        return;
+      }
+
+      const newTest = {
+        id: generateId(),
+        title: testTitle,
+        questions: loadedQuestions.map(q => ({
+          question: q.question,
+          answers: q.answers,
+          correct: q.correct // Save the correct answer index
+        }))
+      };
+
+      let allTests = JSON.parse(localStorage.getItem('allTests')) || [];
+
+      const existingIndex = allTests.findIndex(t => t.id === newTest.id);
+      if (existingIndex !== -1) {
+        allTests[existingIndex] = newTest;
+      } else {
+        allTests.push(newTest);
+      }
+
+      localStorage.setItem('allTests', JSON.stringify(allTests));
+      localStorage.setItem('myTest', JSON.stringify(newTest));
+
+      alert("Тест успешно сохранён!");
+      location.href = 'index.html';
+    }
+
+    function generateId() {
+      return '_' + Math.random().toString(36).substr(2, 9);
+    }
+  </script>
+</body>
+</html>

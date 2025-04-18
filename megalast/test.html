@@ -1,0 +1,143 @@
+<!-- test.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Прохождение теста</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #testContainer {
+      text-align: left; /* Align content to the left */
+      margin: 0 auto;
+      max-width: 600px; /* Center the container with a fixed width */
+    }
+
+    #testContainer h3 {
+      margin-bottom: 15px;
+    }
+
+    #testContainer p {
+      margin-bottom: 20px;
+    }
+
+    #testContainer label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    #testContainer button {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+  <div class="container">
+    <h1 id="testTitle">Прохождение теста</h1>
+
+    <div id="testContainer"></div>
+
+    <div id="resultContainer" style="display: none;"></div>
+
+    <button onclick="location.href='index.html'">← На главную</button>
+  </div>
+</div>
+
+  <script src="script.js"></script>
+  <script>
+    let shuffledQuestions = [];
+    let currentQuestionIndex = 0;
+
+    window.onload = async function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const testId = urlParams.get('id');
+
+      if (!testId) {
+        alert("Тест не найден!");
+        location.href = 'index.html';
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://your-api-endpoint.com/tests/${testId}`);
+        if (!response.ok) {
+          throw new Error('Тест не найден!');
+        }
+
+        const test = await response.json();
+        document.getElementById('testTitle').innerText = test.title;
+        shuffledQuestions = shuffle([...test.questions]);
+        showQuestion();
+      } catch (error) {
+        alert(error.message);
+        location.href = 'index.html';
+      }
+    };
+
+    function showQuestion() {
+      if (currentQuestionIndex >= shuffledQuestions.length) {
+        showResult();
+        return;
+      }
+
+      const q = shuffledQuestions[currentQuestionIndex];
+      const container = document.getElementById('testContainer');
+
+      container.innerHTML = `
+        <h3>Вопрос ${currentQuestionIndex + 1} из ${shuffledQuestions.length}</h3>
+        <p><b>${q.question}</b></p>
+        ${q.answers.map((a, i) => `
+          <label>
+            <input type="radio" name="answer" value="${i}" ${i === 0 ? 'checked' : ''}>
+            ${a}
+          </label>`).join('')}
+        <button onclick="submitAnswer()">Ответить</button>
+      `;
+    }
+
+    function submitAnswer() {
+      const selected = document.querySelector('input[name="answer"]:checked');
+      if (!selected) {
+        alert("Выберите ответ!");
+        return;
+      }
+
+      const q = shuffledQuestions[currentQuestionIndex];
+      const selectedAnswerIndex = parseInt(selected.value, 10);
+
+      const answers = document.querySelectorAll('label');
+      answers.forEach((label, index) => {
+        const input = label.querySelector('input');
+        if (index === q.correct) {
+          label.style.color = 'green'; // Highlight correct answer
+          label.style.fontWeight = 'bold';
+        } else if (input.checked) {
+          label.style.color = 'red'; // Highlight incorrect answer
+        }
+        input.disabled = true; // Disable all inputs after answering
+      });
+
+      if (selectedAnswerIndex === q.correct) {
+        alert("Правильно!");
+      } else {
+        alert("Неправильно! Правильный ответ выделен зелёным.");
+      }
+
+      currentQuestionIndex++;
+      setTimeout(showQuestion, 1500); // Move to the next question after a delay
+    }
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function showResult() {
+      document.getElementById('testContainer').innerHTML = '<h2>Тест завершён!</h2>';
+    }
+  </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Выбор теста</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container" style="position: relative;">
+    <div class="header">
+      <img src="assets/logo.png" alt="Логотип ЗКАТУ" class="logo">
+      <h1>Выберите тест</h1>
+    </div>
+
+    <div id="testList"></div>
+    <button onclick="location.href='index.html'" style="position: absolute; top: 20px; left: 20px; background-color: #FFD200; color: #003366; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+      &larr;
+    </button>
+  </div>
+
+  <script>
+    const list = document.getElementById('testList');
+    const allTests = JSON.parse(localStorage.getItem('allTests')) || [];
+
+    if (allTests.length === 0) {
+      list.innerHTML = '<p>Нет сохранённых тестов.</p>';
+    } else {
+      allTests.forEach(test => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '20px';
+        div.innerHTML = `
+          <h3>${test.title}</h3>
+          <button onclick="startTest('${test.id}')">🧪 Пройти</button>
+          <button onclick="copyLink('${test.id}')">🔗 Скопировать ссылку</button>
+          <button onclick="deleteTest('${test.id}')">🗑️ Удалить</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function startTest(id) {
+      localStorage.setItem('currentTestId', id);
+      location.href = 'test.html';
+    }
+
+    function copyLink(id) {
+      const link = `${window.location.origin}/test.html?id=${id}`;
+      navigator.clipboard.writeText(link).then(() => {
+        alert('Ссылка скопирована: ' + link);
+      }).catch(err => {
+        alert('Ошибка при копировании ссылки: ' + err);
+      });
+    }
+
+    function deleteTest(id) {
+      if (!confirm("Удалить этот тест?")) return;
+      const updated = allTests.filter(t => t.id !== id);
+      localStorage.setItem('allTests', JSON.stringify(updated));
+
+      // если удалённый был активным — сбросить
+      if (localStorage.getItem('currentTestId') === id) {
+        localStorage.removeItem('currentTestId');
+      }
+      if (localStorage.getItem('editTestId') === id) {
+        localStorage.removeItem('editTestId');
+      }
+
+      location.reload();
+    }
+  </script>
+</body>
+</html>
